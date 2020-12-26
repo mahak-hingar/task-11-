@@ -1,0 +1,66 @@
+- hosts: all
+  vars_files:
+     - vartask11.yml
+  tasks:
+     - name: copy  jdk at nodes
+       copy:
+                src: "/root/jdk-8u171-linux-x64.rpm"
+                dest: /root
+     - name: copy hadoop at nodes      
+       copy: 
+                src: "/root/hadoop-1.2.1-1.x86_64.rpm"
+                dest: /root
+     - name: installing jdk
+       shell: 
+                cmd: "rpm -ivh jdk-8u171-linux-x64.rpm --force"
+     - name: installing hadoop 
+       shell:
+                cmd: " rpm -ivh hadoop-1.2.1-1.x86_64.rpm --force"
+     - service:
+                name: firewalld
+                state: stopped
+     - selinux: 
+                policy: targeted
+                state: permissive
+     - template:
+                src: cp.xml
+                dest: "/etc/hadoop/core-site.xml"
+
+
+
+
+- hosts: namenode
+  vars_prompt: 
+              - name: namedir
+                private: no 
+                prompt: "enter the name of directory in namenode"
+
+ 
+  tasks: 
+      - file: 
+                state: directory
+                path: "/{{namedir}}"
+      - template: 
+                src: "hdname.xml"
+                dest: "/etc/hadoop/hdfs-site.xml"
+      - command: " hadoop namenode -format -force "
+      - command: "hadoop-daemon.sh start namenode"
+
+
+
+     
+     
+- hosts: datanode 
+  vars_prompt: 
+       - name: datadir
+         private: no 
+         prompt: "enter the name of directory in slavenode"
+  tasks:
+       - file: 
+               state: directory
+               path: "/{{datadir}}"
+       - template: 
+                src: "hddata.xml"
+                dest: "/etc/hadoop/hdfs-site.xml"
+       
+       - command: "hadoop-daemon.sh start datanode"
